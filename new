@@ -1,21 +1,202 @@
-Plan Type	Problem	Fixes	Recommendations
-Medical Plan Clarifications (840 calls)	Members struggle to understand medical plan details, including coverage, copays, and deductibles.	- Improve member documentation with simplified plan summaries.
-- Provide an online "Know Your Plan" tool for quick coverage checks.
-- Train customer service teams for faster clarification.	- Implement AI-powered virtual assistants for 24/7 plan inquiries.
-- Offer interactive explainer videos.
-- Send automated reminders about plan details.
-Prescription (Rx) Plan Clarifications (546 calls)	Members need clarification on drug coverage, copays, and formulary drug listings.	- Enhance online tools for checking drug coverage and alternatives.
-- Introduce chatbots for quick Rx coverage checks.
-- Send alerts when medication coverage changes.	- Develop a pharmacy dashboard for tracking prescription costs.
-- Launch an AI-based medication cost estimator.
-- Provide a drug comparison tool for cost-saving alternatives.
-Dental Plan Clarifications (48 calls)	Members struggle to find information on covered dental services.	- Enhance online portals with interactive dental coverage guides.
-- Include dental benefits in the welcome kit.
-- Add a real-time eligibility checker for dental procedures.	- Integrate dental provider directories with cost estimators.
-- Automate appointment booking for in-network dentists.
-- Provide personalized notifications for annual dental benefits.
-Plan Not Specified - General Plan Clarifications (385 calls)	Members have general plan questions but do not specify a plan type.	- Create a universal plan explainer tool for all plan types.
-- Improve FAQ sections with AI-powered responses.
-- Ensure consistent messaging across service channels.	- Use AI to detect common queries and generate targeted educational materials.
-- Develop a mobile feature for real-time bill explanations.
-- Provide real-time chat support for all plan-related questions.
+1. Finding a Doctor (PCP)
+Problem:
+
+2,395 calls related to finding a Primary Care Physician (PCP).
+Issues include provider availability, network status, and PCPs not accepting new patients.
+Fixes:
+
+Dedicate resources to maintain an accurate, real-time provider directory (FAD list).
+Enhance the provider search tool with filters for accepting new patients.
+Proactively notify members if their PCP is retiring or leaving the network and suggest three alternatives.
+Include PCP availability details in the welcome packet and online member account.
+Recommendations:
+
+Use AI models to predict PCP availability and proactively recommend providers.
+Expand self-service options for PCP selection via mobile apps and member portals.
+Improve provider data accuracy by integrating with real-time appointment availability systems.
+2. Urgent Care Facility within Network
+Problem:
+
+305 calls related to finding in-network urgent care facilities, indicating difficulty in locating nearby services.
+Fixes:
+
+Improve the online provider directory to clearly indicate in-network urgent care centers.
+Send automated notifications to members about nearby urgent care facilities.
+Provide a guided self-service feature to help members find urgent care services based on symptoms and location.
+Recommendations:
+
+Develop an AI-powered chatbot for urgent care navigation.
+Integrate urgent care facility information with mobile apps and voice assistants for quick access.
+Send proactive SMS reminders about available urgent care options to high-utilization members.
+3. Specialist Availability Issues
+Problem:
+
+421 calls related to difficulty in finding specialists, with some members reporting missing or unclear specialist information.
+Fixes:
+
+Ensure the provider directory includes comprehensive specialist listings.
+Improve filtering options in the search tool for specialty, location, and availability.
+Automate specialist referrals for certain conditions to reduce member effort.
+Recommendations:
+
+Use machine learning to predict member specialist needs and recommend appropriate providers.
+Provide digital appointment scheduling options for specialists via self-service tools.
+Enhance communication between PCPs and specialists to streamline referrals.
+4. Referral Process Issues
+Problem:
+
+242 calls regarding referral confusion, indicating unclear processes or lack of self-service options.
+Fixes:
+
+Improve the welcome kit with clear instructions on referral requirements.
+Allow members to check referral needs and status online or via an automated phone system.
+Enable automated referral processing for common conditions to reduce manual steps.
+Recommendations:
+
+Use AI to analyze call transcripts and identify common referral pain points.
+Develop a self-service portal for real-time referral tracking.
+Integrate referral requirements into the provider search tool for easier access.
+5. Out-of-Network PCP Inquiries
+Problem:
+
+156 calls related to PCPs being out of network, indicating a lack of clarity on provider participation.
+Fixes:
+
+Ensure the provider search tool clearly differentiates between in-network and out-of-network PCPs.
+Send proactive communication when a member’s PCP is leaving the network and provide alternatives.
+Enhance support chatbots to answer network-related queries.
+Recommendations:
+
+Develop an AI-driven assistant to predict and inform members about network changes.
+Offer real-time online chat support for network-related inquiries.
+Provide members with estimated out-of-pocket costs for out-of-network visits in advance.
+
+
+
+1. Coverage Procedure Inquiry
+Problem:
+
+Members call to check whether a specific medical procedure is covered under their plan.
+Fixes:
+
+Improve the member portal to allow quick searches for procedure coverage details.
+Ensure customer service representatives have access to up-to-date coverage information.
+Implement automated responses for common coverage inquiries via chatbots.
+Recommendations:
+
+Develop a self-service coverage lookup tool for members to check procedures online.
+Provide a personalized benefits summary in the member portal.
+Send proactive communication about coverage changes related to high-demand procedures.
+2. In-Network vs. Out-of-Network Coverage
+Problem:
+
+375 calls related to confusion about network status and out-of-network coverage rules.
+Fixes:
+
+Clearly highlight in-network vs. out-of-network providers in the online provider directory.
+Improve explanation of network rules in the welcome kit and member portal.
+Offer a tool to estimate out-of-pocket costs for out-of-network services.
+Recommendations:
+
+Use AI-driven tools to provide personalized cost estimates for out-of-network care.
+Automate alerts to inform members when they are choosing out-of-network providers.
+Enhance chatbot support to clarify coverage differences in real-time.
+3. Coverage Included in Plan or Not
+Problem:
+
+200+ calls about whether certain services are included in their health plan.
+Fixes:
+
+Improve member-facing plan documents with a simplified benefits summary.
+Implement a digital coverage checker in the member portal.
+Train customer service teams to guide members through plan benefits effectively.
+Recommendations:
+
+Send annual coverage summaries with clear explanations of inclusions/exclusions.
+Develop an AI-powered virtual assistant to answer benefit-related queries instantly.
+Provide video tutorials explaining how to check coverage details online.
+4. Coverage Gap and Cost Concerns
+Problem:
+
+200+ calls from members concerned about gaps in coverage or unexpected costs.
+Fixes:
+
+Offer a cost estimator tool to help members anticipate expenses before seeking care.
+Provide clearer communication on cost-sharing, deductibles, and copays.
+Develop personalized outreach for members at risk of high out-of-pocket expenses.
+Recommendations:
+
+Implement real-time claim tracking with cost breakdowns in the member portal.
+Introduce financial assistance resources for members with high medical costs.
+Use predictive analytics to identify and proactively assist members with cost concerns
+
+
+
+
+1. Medical Plan Clarifications
+Problem:
+
+840 calls related to understanding medical plan details, indicating confusion about covered services, copays, and deductibles.
+Fixes:
+
+Improve member documentation with simplified plan summaries.
+Provide an online "Know Your Plan" tool that allows members to enter a service and see coverage details.
+Train customer service teams to quickly clarify plan details and direct members to online self-service options.
+Recommendations:
+
+Implement AI-powered virtual assistants to answer plan questions 24/7.
+Offer interactive explainer videos on medical plan benefits.
+Send automated reminders about plan details during key times (e.g., open enrollment, renewal periods).
+2. Prescription (Rx) Plan Clarifications
+Problem:
+
+546 calls about Rx plan details, including coverage, copays, and formulary drug listings.
+Fixes:
+
+Improve online tools to check if a medication is covered and find alternative covered drugs.
+Create an automated chatbot for quick prescription coverage checks.
+Send proactive alerts when medication coverage changes.
+Recommendations:
+
+Introduce a personalized pharmacy dashboard where members can track prescription costs and coverage.
+Develop an AI-based medication cost estimator to show pricing for different pharmacies.
+Provide an easy-to-use drug comparison tool for alternative, cost-saving medications.
+3. Dental Plan Clarifications
+Problem:
+
+48 calls related to dental plan details, suggesting members struggle to find dental coverage information.
+Fixes:
+
+Enhance the online portal with an interactive dental coverage guide.
+Make dental benefits part of the standard welcome kit to ensure members understand their coverage from the start.
+Enable a real-time eligibility checker to confirm whether a procedure is covered.
+Recommendations:
+
+Integrate dental provider directories with cost estimators for common procedures.
+Automate appointment booking for in-network dental providers via the member portal.
+Offer personalized member notifications for upcoming dental benefit usage (e.g., annual cleanings, X-rays).
+
+
+
+4. Plan Not Specified - General Plan Clarifications
+Problem:
+
+385 calls where members needed general plan clarification but did not specify a particular plan type.
+Fixes:
+
+Introduce a universal plan explainer tool where members can input any plan type and get relevant details.
+Improve FAQ sections with AI-powered dynamic responses based on common queries.
+Ensure consistent messaging about benefits across customer service, portals, and welcome kits.
+Recommendations:
+
+Use AI to detect patterns in general inquiries and create targeted member education materials.
+Develop a mobile app feature that allows users to upload medical bills for real-time benefit explanations.
+Provide real-time chat support for all plan-related queries with AI-driven responses.
+
+
+
+
+
+
+
+
