@@ -12,3 +12,37 @@
 - Develop targeted communication strategies based on data insights.
 - Build predictive models to anticipate and manage network disruptions.
 - Regularly review data feedback to continuously improve member support and care access.
+------------------------------------------------------------------------------------------------------------------
+
+
+**Problems:**
+
+1. **Mammogram Inquiry:**
+   - Uncertainty around pre-authorization requirements and copay details for diagnostic mammograms.
+   - Confusion regarding differences in coverage between hospitals and clinics.
+   - Payment issues and challenges with obtaining proper authorization.
+
+2. **Dental Benefits Inquiry:**
+   - Overwhelming and complex information on dental coverage, including added costs, PCP changes, out-of-pocket limits, and billing.
+   - Difficulty verifying member identity and accessing detailed plan benefits, leading to potential miscommunication.
+
+---
+
+**Fixes:**
+
+1. **Mammogram Case:**
+   - Provide clear, concise information on pre-authorization processes and copay structures for both hospitals and clinics.
+   - Enhance in-call resolution capabilities so agents can address payment issues without unnecessary transfers.
+
+2. **Dental Benefits Case:**
+   - Develop simplified digital resources (FAQs, guides) that explain dental coverage options, copays, out-of-pocket limits, and PCP switching processes.
+   - Streamline identity verification to minimize friction and improve information accuracy.
+
+---
+
+**Recommendations:**
+
+- **Enhanced Communication Tools:** Offer clear, accessible digital guides and pre-recorded information for common procedures and benefit questions.
+- **Agent Training:** Continuously train agents on breaking down complex insurance details and navigating multiple benefit inquiries efficiently.
+- **Integrated Support Systems:** Implement an integrated dashboard to track member inquiries and streamline follow-up, reducing the need for call transfers.
+- **Proactive Member Outreach:** Notify members in advance about coverage specifics and any changes to authorization processes to reduce confusion.
