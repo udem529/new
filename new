@@ -1,24 +1,10 @@
-MID(
-  [YourField],
-  // Determine starting position after the first occurrence of "?", ":", or " ".
-  IF
-    (IF FIND([YourField], "?") > 0 THEN FIND([YourField], "?") ELSE 99999 END) <= 
-    (IF FIND([YourField], ":") > 0 THEN FIND([YourField], ":") ELSE 99999 END)
-    AND
-    (IF FIND([YourField], "?") > 0 THEN FIND([YourField], "?") ELSE 99999 END) <= 
-    (IF FIND([YourField], " ") > 0 THEN FIND([YourField], " ") ELSE 99999 END)
-  THEN
-    (IF FIND([YourField], "?") > 0 THEN FIND([YourField], "?") ELSE 99999 END) + 1
-  ELSEIF
-    (IF FIND([YourField], ":") > 0 THEN FIND([YourField], ":") ELSE 99999 END) <= 
-    (IF FIND([YourField], "?") > 0 THEN FIND([YourField], "?") ELSE 99999 END)
-    AND
-    (IF FIND([YourField], ":") > 0 THEN FIND([YourField], ":") ELSE 99999 END) <= 
-    (IF FIND([YourField], " ") > 0 THEN FIND([YourField], " ") ELSE 99999 END)
-  THEN
-    (IF FIND([YourField], ":") > 0 THEN FIND([YourField], ":") ELSE 99999 END) + 1
-  ELSE
-    (IF FIND([YourField], " ") > 0 THEN FIND([YourField], " ") ELSE 99999 END) + 1
-  END,
-  LEN([YourField])
+REPLACE(
+  REPLACE(
+    REPLACE(
+      REPLACE([YourFieldName], "(y/n)", ""),
+      ",[yorn]", ""
+    ),
+    "yorn", ""
+  ),
+  "y/n", ""
 )
