@@ -1,10 +1,1 @@
-REPLACE(
-  REPLACE(
-    REPLACE(
-      REPLACE([YourFieldName], "(y/n)", ""),
-      ",[yorn]", ""
-    ),
-    "yorn", ""
-  ),
-  "y/n", ""
-)
+LEFT([YourFieldName], 1) + " " + MID([YourFieldName], 2, LEN([YourFieldName]) - 1)
