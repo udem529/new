@@ -1,1 +1,4 @@
-LEFT([YourFieldName], 1) + " " + MID([YourFieldName], 2, LEN([YourFieldName]) - 1)
+IF LOWER(LEFT([YourFieldName], 1)) = "y" THEN "yes"
+ELSEIF LOWER(LEFT([YourFieldName], 1)) = "n" THEN "no"
+ELSE "unknown"
+END
