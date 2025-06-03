@@ -1,0 +1,48 @@
+To calculate the percentage of cases closed within one day, based on:
+
+Case Status = "Closed"
+
+Received Date and Closed Date available
+
+
+Here's how you can break it down:
+
+
+---
+
+Step-by-Step Logic
+
+1. Filter only closed cases
+CASE WHEN [Case Status] = 'Closed' THEN ...
+
+
+2. Calculate the duration between Received Date and Closed Date
+DATEDIFF('day', [Received Date], [Closed Date])
+
+
+3. Count cases where the difference is ≤ 1 day
+
+
+4. Divide by total closed cases and multiply by 100 to get percentage
+
+
+
+
+---
+
+Pseudocode / Calculated Field Example (e.g., in Tableau or similar BI tool)
+
+-- For the count of cases closed within 1 day
+IF [Case Status] = 'Closed' AND DATEDIFF('day', [Received Date], [Closed Date]) <= 1 THEN 1 ELSE 0 END
+
+Then for the percentage:
+
+SUM(IF [Case Status] = 'Closed' AND DATEDIFF('day', [Received Date], [Closed Date]) <= 1 THEN 1 ELSE 0 END) 
+/
+SUM(IF [Case Status] = 'Closed' THEN 1 ELSE 0 END) 
+* 100
+
+
+---
+
+Would you like this added directly to your dashboard as a KPI or visual? I can help shape it for Power BI, Tableau, or whichever tool you're using.
