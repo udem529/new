@@ -1,0 +1,35 @@
+GeoMap build-out
+
+Assigned geographic roles to country_cd ▸ Country/Region, state ▸ State/Province, county ▸ County, zip_code ▸ ZIP Code, city ▸ City.
+
+Built a 5-level hierarchy Country ► State ► County ► ZIP ► City for drill-down.
+
+Created the initial filled-map view at State level, added SUM(Case Count) to Colour, and enabled + expansion to counties/ZIPs.
+
+Filtered to USA only, turned off land-cover layers, and customised tooltips to show location + case count.
+
+Published the sheet to the dashboard container and verified drill-through performance on ~40 K ZIP marks.
+
+
+
+2. Queues ↔ Roles interactive view
+
+Built a Queue ► Role hierarchy to support native drill-down.
+
+Added a View Level parameter (Queue, Role) and Boolean “Show Sheet” calcs to control sheet swapping.
+
+Configured Change-Parameter actions so a click on a Queue bar flips to the Role view (pre-filtered to that queue) and vice-versa.
+
+De-duped role names, applied consistent colour palette, and documented the action-flow in the workbook for future admins.
+
+
+
+3. LOBD ID research & flow update
+
+Cross-checked LOBD_ID across DataSource_A (Case master) and DataSource_B (BOS feed).
+
+Located Case ID ↔ LOBD Name relationship in the BOS _LOB_DETAIL column, confirmed 1:1 mapping for 98 % of records.
+
+Added a left join in the staging prep-flow (case_id key) and validated row counts & duplicates post-join.
+
+Once QA passes, this branch will be merged into the Main Enterprise Open Inventory prep-flow and scheduled with existing credentials.
