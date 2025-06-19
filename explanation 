@@ -1,0 +1,269 @@
+Step 1: row_num
+
+➜ Purpose: Give each call a sequence number per member, so we can reference “previous” and “next” calls easily.
+
+ROW_NUMBER() OVER (PARTITION BY SBSB_ID ORDER BY CSTK_RECD_DT) AS ROW_NUM
+
+SBSB_ID	CSSC_ID	CSTK_RECD_DT	ROW_NUM
+
+101	A1	2024-01-05	1
+102	B1	2024-02-01	1
+102	B2	2024-04-01	2
+103	C1	2024-03-10	1
+103	C2	2024-04-25	2
+103	C3	2024-05-15	3
+104	D1	2024-01-10	1
+104	D2	2024-08-15	2
+105	E1	2024-01-20	1
+105	E2	2024-05-01	2
+105	E3	2025-01-15	3
+106	F1	2024-06-01	1
+107	G1	2024-02-20	1
+107	G2	2024-07-15	2
+108	H1	2024-09-01	1
+108	H2	2024-09-10	2
+108	H3	2024-09-20	3
+109	I1	2024-01-01	1
+109	I2	2024-07-20	2
+109	I3	2024-08-25	3
+110	J1	2024-11-11	1
+
+
+
+---
+
+2️⃣ Step 2: previous_call_date
+
+➜ Purpose: For each call, fetch the prior call date (LAG) within the same member.
+
+LAG(CSTK_RECD_DT) OVER (PARTITION BY SBSB_ID ORDER BY ROW_NUM) AS prev_call_date
+
+SBSB_ID	CSSC_ID	ROW_NUM	prev_call_date
+
+101	A1	1	NULL
+102	B1	1	NULL
+102	B2	2	2024-02-01
+103	C1	1	NULL
+103	C2	2	2024-03-10
+103	C3	3	2024-04-25
+104	D1	1	NULL
+104	D2	2	2024-01-10
+105	E1	1	NULL
+105	E2	2	2024-01-20
+105	E3	3	2024-05-01
+106	F1	1	NULL
+107	G1	1	NULL
+107	G2	2	2024-02-20
+108	H1	1	NULL
+108	H2	2	2024-09-01
+108	H3	3	2024-09-10
+109	I1	1	NULL
+109	I2	2	2024-01-01
+109	I3	3	2024-07-20
+110	J1	1	NULL
+
+
+
+---
+
+3️⃣ Step 3: call_interval_days
+
+➜ Purpose: Compute days since the previous call.
+
+CAST(CSTK_RECD_DT AS DATE) - CAST(prev_call_date AS DATE) AS call_int_day
+
+SBSB_ID	CSSC_ID	prev_call_date	call_int_day
+
+101	A1	NULL	NULL
+102	B1	NULL	NULL
+102	B2	2024-02-01	60
+103	C1	NULL	NULL
+103	C2	2024-03-10	46
+103	C3	2024-04-25	20
+104	D1	NULL	NULL
+104	D2	2024-01-10	218
+105	E1	NULL	NULL
+105	E2	2024-01-20	102
+105	E3	2024-05-01	259
+106	F1	NULL	NULL
+107	G1	NULL	NULL
+107	G2	2024-02-20	146
+108	H1	NULL	NULL
+108	H2	2024-09-01	9
+108	H3	2024-09-10	10
+109	I1	NULL	NULL
+109	I2	2024-01-01	201
+109	I3	2024-07-20	36
+110	J1	NULL	NULL
+
+
+
+---
+
+4️⃣ Step 4: bucketed_cte
+
+➜ Purpose:
+
+1. Human-readable buckets for reporting (you can tweak these non-overlapping ranges at will).
+
+
+2. Flag any interval ≤180 days as a “repeat” (lt_180days = 1).
+
+
+
+CASE
+  WHEN call_int_day IS NULL          THEN 'First Call'
+  WHEN call_int_day BETWEEN 0 AND 30 THEN '0–30 days'
+  WHEN call_int_day BETWEEN 31 AND 60 THEN '31–60 days'
+  WHEN call_int_day BETWEEN 61 AND 90 THEN '61–90 days'
+  WHEN call_int_day BETWEEN 91 AND 120 THEN '91–120 days'
+  WHEN call_int_day BETWEEN 121 AND 180 THEN '121–180 days'
+  ELSE '180+ days'
+END AS date_bucket,
+
+CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END AS lt_180days
+
+SBSB_ID	CSSC_ID	call_int_day	date_bucket	lt_180days
+
+101	A1	NULL	First Call	0
+102	B1	NULL	First Call	0
+102	B2	60	31–60 days	1
+103	C1	NULL	First Call	0
+103	C2	46	31–60 days	1
+103	C3	20	0–30 days	1
+104	D1	NULL	First Call	0
+104	D2	218	180+ days	0
+105	E1	NULL	First Call	0
+105	E2	102	91–120 days	1
+105	E3	259	180+ days	0
+106	F1	NULL	First Call	0
+107	G1	NULL	First Call	0
+107	G2	146	121–180 days	1
+108	H1	NULL	First Call	0
+108	H2	9	0–30 days	1
+108	H3	10	0–30 days	1
+109	I1	NULL	First Call	0
+109	I2	201	180+ days	0
+109	I3	36	31–60 days	1
+110	J1	NULL	First Call	0
+
+
+
+---
+
+5️⃣ Step 5: Build window flags (lag_lt_180days, lead_lt_180days)
+
+➜ Purpose: Detect start and end of each 180-day repeat cluster by looking at neighbors.
+
+LAG (lt_180days) OVER (PARTITION BY SBSB_ID ORDER BY ROW_NUM) AS lag_lt_180days,
+LEAD(lt_180days) OVER (PARTITION BY SBSB_ID ORDER BY ROW_NUM) AS lead_lt_180days
+
+SBSB_ID	CSSC_ID	lt_180days	lag_lt_180days	lead_lt_180days
+
+101	A1	0	NULL	NULL
+102	B1	0	NULL	1
+102	B2	1	0	NULL
+103	C1	0	NULL	1
+103	C2	1	0	1
+103	C3	1	1	NULL
+104	D1	0	NULL	0
+104	D2	0	0	NULL
+105	E1	0	NULL	1
+105	E2	1	0	0
+105	E3	0	1	NULL
+106	F1	0	NULL	NULL
+107	G1	0	NULL	1
+107	G2	1	0	NULL
+108	H1	0	NULL	1
+108	H2	1	0	1
+108	H3	1	1	NULL
+109	I1	0	NULL	0
+109	I2	0	0	1
+109	I3	1	0	NULL
+110	J1	0	NULL	NULL
+
+
+
+---
+
+6️⃣ Step 6: final_cte → determine start_dt & end_dt
+
+➜ Purpose:
+
+Start a cluster when lt_180days=1 and lag_lt_180days=0.
+
+End a cluster when lt_180days=1 and (lead_lt_180days=0 or NULL).
+
+
+MAX(
+  CASE WHEN lt_180days=1 AND lag_lt_180days=0
+       THEN prev_call_date
+  END
+) OVER (PARTITION BY SBSB_ID ORDER BY ROW_NUM ROWS UNBOUNDED PRECEDING)
+  AS start_dt,
+
+CASE WHEN lt_180days=1
+     AND (lead_lt_180days=0 OR lead_lt_180days IS NULL)
+THEN CSTK_RECD_DT END AS end_dt
+
+SBSB_ID	CSSC_ID	lt_180days	lag_lt_180days	lead_lt_180days	start_dt	end_dt
+
+102	B2	1	0	NULL	2024-02-01	2024-04-01
+103	C2	1	0	1	2024-03-10	NULL
+103	C3	1	1	NULL	NULL	2024-05-15
+105	E2	1	0	0	2024-01-20	2024-05-01
+107	G2	1	0	NULL	2024-02-20	2024-07-15
+108	H2	1	0	1	2024-09-01	NULL
+108	H3	1	1	NULL	NULL	2024-09-20
+109	I3	1	0	NULL	2024-07-20	2024-08-25
+
+
+> Rows with lt_180days=0 are omitted here because they never start/end a repeat cluster.
+Notice multi-call clusters (103,108) show two rows: one marking start, one marking end.
+
+
+
+
+---
+
+7️⃣ Step 7: window_summary + final aggregation
+
+➜ Purpose:
+
+1. Deduplicate each (member, start_dt, end_dt) pair.
+
+
+2. Count all calls whose CSTK_RECD_DT falls between that start/end.
+
+
+
+-- window_summary
+SELECT SBSB_ID, start_dt, MAX(end_dt) AS end_dt
+  FROM final_cte
+ GROUP BY SBSB_ID, start_dt
+
+-- final output
+SELECT
+  ws.SBSB_ID,
+  ws.start_dt,
+  ws.end_dt,
+  COUNT(DISTINCT f.CSSC_ID) AS repeat_calls_in_window
+FROM window_summary ws
+JOIN final_cte f
+  ON f.SBSB_ID = ws.SBSB_ID
+ AND f.CSTK_RECD_DT BETWEEN ws.start_dt AND ws.end_dt
+GROUP BY ws.SBSB_ID, ws.start_dt, ws.end_dt
+
+SBSB_ID	start_dt	end_dt	repeat_calls_in_window
+
+102	2024-02-01	2024-04-01	2
+103	2024-03-10	2024-05-15	3
+105	2024-01-20	2024-05-01	2
+107	2024-02-20	2024-07-15	2
+108	2024-09-01	2024-09-20	3
+109	2024-07-20	2024-08-25	2
+
+
+> Members 101, 104, 106, 110 have no row here → they had no cluster of repeats within 180 days.
+
+
