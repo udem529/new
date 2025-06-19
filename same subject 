@@ -1,0 +1,180 @@
+--------------------------------------------------------------------------------
+-- 180-Day Repeat-Call Detection Pipeline (per member + subject)
+--------------------------------------------------------------------------------
+
+WITH
+
+--------------------------------------------------------------------------------
+-- 1️⃣  Number each call chronologically for each member & subject
+--------------------------------------------------------------------------------
+row_num AS (
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        subj_desc,
+        CSTK_RECD_DT,
+
+        ROW_NUMBER() OVER (
+            PARTITION BY SBSB_ID, subj_desc    -- group by member & subject
+            ORDER BY     CSTK_RECD_DT         -- order by call date
+        ) AS ROW_NUM
+    FROM cte
+),
+
+--------------------------------------------------------------------------------
+-- 2️⃣  Find the prior call date within the same member & subject
+--------------------------------------------------------------------------------
+previous_call_date AS (
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        subj_desc,
+        CSTK_RECD_DT,
+        ROW_NUM,
+
+        LAG(CSTK_RECD_DT) OVER (
+            PARTITION BY SBSB_ID, subj_desc
+            ORDER BY     ROW_NUM
+        ) AS prev_call_date                 -- previous same-subject call date
+    FROM row_num
+),
+
+--------------------------------------------------------------------------------
+-- 3️⃣  Compute days between current call and previous same-subject call
+--------------------------------------------------------------------------------
+call_interval_days AS (
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        subj_desc,
+        CSTK_RECD_DT,
+        prev_call_date,
+        ROW_NUM,
+
+        -- raw days difference
+        CAST(CSTK_RECD_DT AS DATE)
+          - CAST(prev_call_date AS DATE)
+        AS call_int_day,
+
+        -- defensive calculation only if a prior row existed
+        CASE
+            WHEN LAG(CSSC_ID) OVER (
+                     PARTITION BY SBSB_ID, subj_desc
+                     ORDER BY     prev_call_date
+                 ) IS NOT NULL
+            THEN CAST(CSTK_RECD_DT AS DATE)
+               - CAST(
+                   LAG(CSTK_RECD_DT) OVER (
+                       PARTITION BY SBSB_ID, subj_desc
+                       ORDER BY     prev_call_date
+                   )
+                   AS DATE
+                 )
+            ELSE NULL
+        END AS CALL_INTERVAL_DAYS
+    FROM previous_call_date
+),
+
+--------------------------------------------------------------------------------
+-- 4️⃣  Bucket intervals & flag any gap ≤ 180 days
+--------------------------------------------------------------------------------
+bucketed_cte AS (
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        subj_desc,
+        CSTK_RECD_DT,
+        prev_call_date,
+        call_int_day,
+        ROW_NUM,
+        CALL_INTERVAL_DAYS,
+
+        -- human-readable, non-overlapping buckets
+        CASE
+            WHEN call_int_day IS NULL             THEN 'First Call'
+            WHEN call_int_day BETWEEN  0  AND  30 THEN '0–30 days'
+            WHEN call_int_day BETWEEN 31  AND  60 THEN '31–60 days'
+            WHEN call_int_day BETWEEN 61  AND  90 THEN '61–90 days'
+            WHEN call_int_day BETWEEN 91  AND 120 THEN '91–120 days'
+            WHEN call_int_day BETWEEN 121 AND 180 THEN '121–180 days'
+            ELSE '180+ days'
+        END AS date_bucket,
+
+        -- flag calls that occur within 180 days of a prior same-subject call
+        CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END AS lt_180days,
+
+        -- peek at prior & next flags to locate window boundaries
+        LAG(CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END)
+          OVER (PARTITION BY SBSB_ID, subj_desc ORDER BY ROW_NUM) AS lag_lt_180days,
+        LEAD(CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END)
+          OVER (PARTITION BY SBSB_ID, subj_desc ORDER BY ROW_NUM) AS lead_lt_180days
+    FROM call_interval_days
+    ORDER BY SBSB_ID, subj_desc, ROW_NUM
+),
+
+--------------------------------------------------------------------------------
+-- 5️⃣  Identify each repeat-call window’s start & end dates
+--------------------------------------------------------------------------------
+final_cte AS (
+    SELECT
+        bc.*,
+
+        -- window START: first flagged call after a non-repeat
+        MAX(
+            CASE
+                WHEN lt_180days    = 1    -- this call is within 180d
+                 AND lag_lt_180days = 0    -- prior call was outside
+                THEN prev_call_date
+            END
+        ) OVER (
+            PARTITION BY SBSB_ID, subj_desc
+            ORDER BY     ROW_NUM
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS start_dt,
+
+        -- window END: last flagged call before the chain breaks
+        CASE
+            WHEN lt_180days    = 1
+             AND (lead_lt_180days = 0 OR lead_lt_180days IS NULL)
+            THEN CSTK_RECD_DT
+        END AS end_dt
+    FROM bucketed_cte bc
+),
+
+--------------------------------------------------------------------------------
+-- 6️⃣  Collapse to one row per (member, subject, window)
+--------------------------------------------------------------------------------
+window_summary AS (
+    SELECT
+        SBSB_ID,
+        subj_desc,
+        start_dt,
+        MAX(end_dt) AS end_dt
+    FROM final_cte
+    WHERE start_dt IS NOT NULL
+    GROUP BY SBSB_ID, subj_desc, start_dt
+)
+
+--------------------------------------------------------------------------------
+-- 7️⃣  Final result: count all calls in each 180-day window
+--------------------------------------------------------------------------------
+SELECT
+    ws.SBSB_ID,
+    ws.subj_desc          AS subject,
+    ws.start_dt,
+    ws.end_dt,
+    COUNT(DISTINCT f.CSSC_ID) AS calls_in_180d_window
+FROM window_summary ws
+JOIN final_cte f
+  ON f.SBSB_ID    = ws.SBSB_ID
+ AND f.subj_desc  = ws.subj_desc
+ AND f.CSTK_RECD_DT BETWEEN ws.start_dt AND ws.end_dt
+GROUP BY
+    ws.SBSB_ID,
+    ws.subj_desc,
+    ws.start_dt,
+    ws.end_dt
+ORDER BY
+    ws.SBSB_ID,
+    ws.subj_desc,
+    ws.start_dt;
