@@ -1,0 +1,142 @@
+/* =========== 1. Number each call chronologically for every member =========== */
+WITH row_num AS (          -- ────────────────────────────────────────────────
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        CSTK_RECD_DT,
+        ROW_NUMBER() OVER (
+            PARTITION BY SBSB_ID
+            ORDER BY     CSTK_RECD_DT
+        ) AS ROW_NUM
+    FROM cte
+),
+
+/* =========== 2. Pull the prior call date for the same member ============== */
+previous_call_date AS (    -- ────────────────────────────────────────────────
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        CSTK_RECD_DT,
+        ROW_NUM,
+        LAG(CSTK_RECD_DT) OVER (
+            PARTITION BY SBSB_ID
+            ORDER BY     ROW_NUM
+        ) AS prev_call_date
+    FROM row_num
+),
+
+/* =========== 3. Work out the day-gap between calls ========================= */
+call_interval_days AS (    -- ────────────────────────────────────────────────
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        CSTK_RECD_DT,
+        prev_call_date,
+        ROW_NUM,
+
+        /* simple gap: current – previous */
+        CAST(CSTK_RECD_DT AS DATE) - CAST(prev_call_date AS DATE) AS call_int_day,
+
+        /* defensive gap: only for rows that *have* a previous row */
+        CASE
+            WHEN LAG(CSSC_ID) OVER (
+                     PARTITION BY SBSB_ID
+                     ORDER BY     prev_call_date
+                 )            IS NOT NULL
+            THEN CAST(CSTK_RECD_DT AS DATE) -
+                 CAST(LAG(CSTK_RECD_DT) OVER (
+                        PARTITION BY SBSB_ID
+                        ORDER BY     prev_call_date
+                      )         AS DATE)
+            ELSE NULL
+        END AS CALL_INTERVAL_DAYS
+    FROM previous_call_date
+),
+
+/* =========== 4. Bucketise intervals + flag any call ≤180 days ============== */
+bucketed_cte AS (          -- ────────────────────────────────────────────────
+    SELECT
+        CSSC_ID,
+        SBSB_ID,
+        CSTK_RECD_DT,
+        prev_call_date,
+        call_int_day,
+        ROW_NUM,
+        CALL_INTERVAL_DAYS,
+
+        /* → EDIT THESE RANGES however you like ← */
+        CASE
+            WHEN call_int_day IS NULL              THEN 'First Call'
+            WHEN call_int_day BETWEEN  0 AND  30   THEN '0-30 days'
+            WHEN call_int_day BETWEEN 31 AND  60   THEN '31-60 days'
+            WHEN call_int_day BETWEEN 61 AND  90   THEN '61-90 days'
+            WHEN call_int_day BETWEEN 91 AND 120   THEN '91-120 days'
+            WHEN call_int_day BETWEEN 121 AND 180  THEN '121-180 days'
+            ELSE                                       '180+ days'
+        END AS date_bucket,
+
+        /* handy 180-day repeat flag */
+        CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END                                                     AS lt_180days,
+        LAG (CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END) OVER (
+                  PARTITION BY SBSB_ID ORDER BY ROW_NUM)                                                    AS lag_lt_180days,
+        LEAD(CASE WHEN call_int_day <= 180 THEN 1 ELSE 0 END) OVER (
+                  PARTITION BY SBSB_ID ORDER BY ROW_NUM)                                                    AS lead_lt_180days
+    FROM call_interval_days
+    ORDER BY ROW_NUM NULLS FIRST
+),
+
+/* =========== 5. Carve out each 180-day “repeat-call window” ================ */
+final_cte AS (             -- ────────────────────────────────────────────────
+    SELECT
+        bc.*,
+
+        /* window **start** = first call *after* any gap >180 days */
+        MAX(
+            CASE
+                WHEN lt_180days = 1            -- current call inside 180-day window
+                 AND lag_lt_180days = 0        -- but previous call is *outside*
+                THEN prev_call_date
+            END
+        ) OVER (
+            PARTITION BY SBSB_ID
+            ORDER BY     ROW_NUM
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS start_dt,
+
+        /* window **end** = last call *before* any subsequent gap >180 days */
+        CASE
+            WHEN lt_180days = 1
+             AND (lead_lt_180days = 0 OR lead_lt_180days IS NULL)
+            THEN CSTK_RECD_DT
+        END AS end_dt
+    FROM bucketed_cte   bc
+),
+
+/* =========== 6. Collapse to unique windows (start-dt / end-dt) ============= */
+window_summary AS (        -- ────────────────────────────────────────────────
+    SELECT
+        SBSB_ID,
+        start_dt,
+        MAX(end_dt) AS end_dt
+    FROM final_cte
+    WHERE start_dt IS NOT NULL
+    GROUP BY SBSB_ID, start_dt
+)
+
+/* =========== 7. Final output: repeat-call count per window ================= */
+SELECT
+    ws.SBSB_ID,
+    ws.start_dt,
+    ws.end_dt,
+    COUNT(DISTINCT f.CSSC_ID) AS repeat_calls_in_window
+FROM window_summary ws
+JOIN final_cte      f
+  ON f.SBSB_ID       = ws.SBSB_ID
+ AND f.CSTK_RECD_DT BETWEEN ws.start_dt AND ws.end_dt
+GROUP BY
+    ws.SBSB_ID,
+    ws.start_dt,
+    ws.end_dt
+ORDER BY
+    ws.SBSB_ID,
+    ws.start_dt;
